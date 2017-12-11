@@ -838,6 +838,21 @@ For example, \"(some-func FOO &optional BAR)\"."
                            (when (funcall predicate sym-here)
                              (symbol-name sym-here))))))
 
+(defun helpful--edebug-on-call (sym)
+  (with-temp-buffer
+    (insert (helpful--source sym t))
+    (goto-char (point-min))
+    (let* ((edebug-all-forms t)
+           (edebug-all-defs t)
+           (form (edebug-read-top-level-form)))
+      (eval (eval-sexp-add-defvars form)
+            ;; TODO: find out if original def used lexical binding.
+            t))))
+
+(helpful--edebug-on-call 'helpful--kind-name)
+
+(helpful--kind-name 'foo nil)
+
 ;;;###autoload
 (defun helpful-function (symbol)
   "Show help for function named SYMBOL."
@@ -1004,6 +1019,13 @@ See also `helpful-callable' and `helpful-variable'."
   "Move point backward to the next button."
   (interactive)
   (helpful--forward-button -1))
+
+(defun helpful-kill-buffers ()
+  "Kill all `helpful-mode' buffers."
+  (interactive)
+  (dolist (buffer (buffer-list))
+    (when (eq (buffer-local-value 'major-mode buffer) 'helpful-mode)
+      (kill-buffer buffer))))
 
 (define-key helpful-mode-map (kbd "g") #'helpful-update)
 (define-key helpful-mode-map (kbd "RET") #'helpful-visit-reference)
